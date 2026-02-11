@@ -1,0 +1,116 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Facture {{ invoice.number }} | NayxusStock{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="header-title">
+        <h1 class="page-title">Facture #{{ invoice.number }}</h1>
+    </div>
+    <div class="header-actions">
+        <a href="{% url 'invoice_pdf' invoice.pk %}" class="btn btn-outline">
+            <i class="fas fa-file-pdf"></i> Télécharger PDF
+        </a>
+        <button class="btn btn-outline" onclick="window.print();">
+            <i class="fas fa-print"></i> Imprimer
+        </button>
+        <a href="{% url 'invoice_edit' invoice.pk %}" class="btn btn-primary">
+            <i class="fas fa-edit"></i> Modifier
+        </a>
+        <a href="{% url 'invoice_list' %}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Retour à la liste
+        </a>
+    </div>
+</div>
+
+<div class="invoice-container"
+    style="background-color: var(--bg-secondary); padding: 40px; border-radius: 12px; border: 1px solid var(--border-color); color: var(--text-primary);">
+    <div
+        style="display: flex; justify-content: space-between; margin-bottom: 50px; border-bottom: 2px solid var(--border-color); padding-bottom: 30px;">
+        <div style="display: flex; align-items: flex-start; gap: 20px; max-width: 60%;">
+            {% if store.logo %}
+                <img src="{{ store.logo.url }}" alt="Logo" style="max-height: 100px; width: auto; border-radius: 8px;">
+            {% endif %}
+            <div class="invoice-brand">
+                <h2 style="font-size: 2rem; color: var(--accent); margin: 0 0 5px 0; line-height: 1.2;">{{ store.name }}</h2>
+                <div style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5;">
+                    <p style="margin: 0;"><i class="fas fa-map-marker-alt" style="width: 15px;"></i> {{ store.address|default:"Solutions de Gestion de Stock" }}</p>
+                    {% if store.phone %}<p style="margin: 3px 0 0 0;"><i class="fas fa-phone" style="width: 15px;"></i> {{ store.phone }}</p>{% endif %}
+                    {% if store.email %}<p style="margin: 3px 0 0 0;"><i class="fas fa-envelope" style="width: 15px;"></i> {{ store.email }}</p>{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="invoice-meta" style="text-align: right; background: rgba(59, 130, 246, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.1); min-width: 200px;">
+            <p style="margin: 0 0 10px 0; font-size: 1.2rem; font-weight: 700; color: var(--accent);">FACTURE</p>
+            <p style="margin-bottom: 8px; font-size: 0.9rem;"><strong>Date:</strong> {{ invoice.date|date:"d/m/Y H:i" }}</p>
+            <p style="margin-bottom: 8px; font-size: 0.9rem;"><strong>Statut:</strong>
+                {% if invoice.is_paid %}
+                <span style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem;">PAYÉE</span>
+                {% else %}
+                <span style="background: rgba(251, 191, 36, 0.1); color: #fbbf24; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 0.8rem;">EN ATTENTE</span>
+                {% endif %}
+            </p>
+            <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);"><strong>Vendeur:</strong> {{ invoice.user.username }}</p>
+        </div>
+    </div>
+
+    <div style="margin-bottom: 40px;">
+        <h4
+            style="color: var(--text-secondary); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; margin-bottom: 15px;">
+            Facturé à :</h4>
+        <div style="font-size: 1.1rem;">
+            <p><strong>{{ invoice.customer.name }}</strong></p>
+            <p>{{ invoice.customer.address|default:"—" }}</p>
+            <p>{{ invoice.customer.phone|default:"—" }}</p>
+            <p>{{ invoice.customer.email|default:"—" }}</p>
+        </div>
+    </div>
+
+    <div class="invoice-items" style="margin-bottom: 40px;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
+                    <th style="padding: 15px 0;">Produit</th>
+                    <th style="padding: 15px 0;">Prix Unitaire</th>
+                    <th style="padding: 15px 0; text-align: center;">Quantité</th>
+                    <th style="padding: 15px 0; text-align: right;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in invoice.items.all %}
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 15px 0;">{{ item.product.name }}</td>
+                    <td style="padding: 15px 0;">{{ item.unit_price }} FCFA</td>
+                    <td style="padding: 15px 0; text-align: center;">{{ item.quantity }}</td>
+                    <td style="padding: 15px 0; text-align: right;">{{ item.subtotal }} FCFA</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="padding: 30px; text-align: center; color: var(--text-secondary);">Aucun
+                        article dans cette facture.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end;">
+        <div style="width: 300px;">
+            <div style="display: flex; justify-content: space-between; padding: 10px 0;">
+                <span>Total Brut:</span>
+                <span>{{ invoice.total_amount }} FCFA</span>
+            </div>
+            <div
+                style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+                <span>Montant Payé:</span>
+                <span>{{ invoice.paid_amount }} FCFA</span>
+            </div>
+            <div
+                style="display: flex; justify-content: space-between; padding: 15px 0; font-size: 1.4rem; font-weight: 700; color: var(--accent);">
+                <span>Reste à Payer:</span>
+                <span>{{ invoice.remaining_amount }} FCFA</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

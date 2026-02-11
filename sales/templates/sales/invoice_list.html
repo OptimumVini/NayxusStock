@@ -1,0 +1,205 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Ventes | NayxusStock{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="header-title">
+        <h1 class="page-title">Ventes</h1>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">Gérez vos ventes et suivis de paiements.</p>
+    </div>
+    <div class="header-actions">
+        <a href="{% url 'invoice_add' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nouvelle vente
+        </a>
+    </div>
+</div>
+
+<div class="filters-section"
+    style="background: var(--bg-secondary); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 25px;">
+    <form method="get" style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
+        <div style="flex: 1; min-width: 200px;">
+            <label
+                style="display: block; margin-bottom: 5px; font-size: 0.85rem; color: var(--text-secondary);">Recherche</label>
+            <div class="search-bar" style="width: 100%; margin: 0; background: var(--bg-primary);">
+                <i class="fas fa-search"></i>
+                <input type="text" name="search" placeholder="N° ou Client..." value="{{ search_query }}">
+            </div>
+        </div>
+
+        <div>
+            <label style="display: block; margin-bottom: 5px; font-size: 0.85rem; color: var(--text-secondary);">Date
+                début</label>
+            <input type="date" name="start_date" value="{{ start_date }}"
+                style="padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); width: 100%;">
+        </div>
+
+        <div>
+            <label style="display: block; margin-bottom: 5px; font-size: 0.85rem; color: var(--text-secondary);">Date
+                fin</label>
+            <input type="date" name="end_date" value="{{ end_date }}"
+                style="padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); width: 100%;">
+        </div>
+
+        <div>
+            <label
+                style="display: block; margin-bottom: 5px; font-size: 0.85rem; color: var(--text-secondary);">Statut</label>
+            <select name="status"
+                style="padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); min-width: 160px;">
+                <option value="ALL">Toutes les factures</option>
+                {% for code, label in invoice_statuses %}
+                <option value="{{ code }}" {% if status_filter == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="padding: 10px 25px; height: 42px;">
+            <i class="fas fa-filter"></i> Afficher
+        </button>
+
+        <button type="button" onclick="openBilan()" class="btn btn-outline" style="padding: 10px 25px; height: 42px; border-color: var(--accent); color: var(--accent);">
+            <i class="fas fa-print"></i> Bilan
+        </button>
+
+        <a href="{% url 'invoice_list' %}" class="btn btn-outline" style="padding: 10px 15px; height: 42px;"
+            title="Réinitialiser">
+            <i class="fas fa-redo"></i>
+        </a>
+    </form>
+</div>
+
+<script>
+function openBilan() {
+    const startDate = document.querySelector('input[name="start_date"]').value;
+    const endDate = document.querySelector('input[name="end_date"]').value;
+    const status = document.querySelector('select[name="status"]').value;
+    
+    let url = "{% url 'vendeur_bilan' %}?";
+    if (startDate) url += "start_date=" + startDate + "&";
+    if (endDate) url += "end_date=" + endDate + "&";
+    if (status) url += "status=" + status;
+    
+    window.open(url, '_blank');
+}
+</script>
+
+<!-- Récapitulatif Statistique -->
+<div class="summary-cards"
+    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
+    <div class="summary-card"
+        style="background: var(--bg-secondary); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 15px;">
+        <div
+            style="width: 45px; height: 45px; background: rgba(59, 130, 246, 0.1); color: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+            <i class="fas fa-file-invoice"></i>
+        </div>
+        <div>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 2px;">Nb. de factures</p>
+            <h3 style="font-size: 1.25rem; font-weight: 700;">{{ summary.count }}</h3>
+        </div>
+    </div>
+
+    <div class="summary-card"
+        style="background: var(--bg-secondary); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 15px;">
+        <div
+            style="width: 45px; height: 45px; background: rgba(16, 185, 129, 0.1); color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+            <i class="fas fa-money-bill-wave"></i>
+        </div>
+        <div>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 2px;">Montant Total</p>
+            <h3 style="font-size: 1.25rem; font-weight: 700;">{{ summary.total|floatformat:0 }} <span
+                    style="font-size: 0.8rem; font-weight: 400;">FCFA</span></h3>
+        </div>
+    </div>
+
+    <div class="summary-card"
+        style="background: var(--bg-secondary); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 15px;">
+        <div
+            style="width: 45px; height: 45px; background: rgba(139, 92, 246, 0.1); color: #8b5cf6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+            <i class="fas fa-hand-holding-usd"></i>
+        </div>
+        <div>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 2px;">Montant Payé</p>
+            <h3 style="font-size: 1.25rem; font-weight: 700;">{{ summary.paid|floatformat:0 }} <span
+                    style="font-size: 0.8rem; font-weight: 400;">FCFA</span></h3>
+        </div>
+    </div>
+
+    <div class="summary-card"
+        style="background: var(--bg-secondary); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 15px;">
+        <div
+            style="width: 45px; height: 45px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 2px;">Reste à payer</p>
+            <h3 style="font-size: 1.25rem; font-weight: 700; color: #ef4444;">{{ summary.remaining|floatformat:0 }} <span
+                    style="font-size: 0.8rem; font-weight: 400;">FCFA</span></h3>
+        </div>
+    </div>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>N° Facture</th>
+                <th>Date</th>
+                <th>Client</th>
+                <th>Montant Total</th>
+                <th>Montant Payé</th>
+                <th>Reste à Payer</th>
+                <th>Statut</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for invoice in invoices %}
+            <tr class="data-row">
+                <td style="font-weight: 600;">{{ invoice.number }}</td>
+                <td>{{ invoice.date|date:"d/m/Y H:i" }}</td>
+                <td>{{ invoice.customer.name }}</td>
+                <td>{{ invoice.total_amount }} FCFA</td>
+                <td>{{ invoice.paid_amount }} FCFA</td>
+                <td>
+                    <span
+                        style="{% if invoice.remaining_amount > 0 %}color: #ef4444;{% else %}color: #10b981;{% endif %} font-weight: 600;">
+                        {{ invoice.remaining_amount|floatformat:0 }} FCFA
+                    </span>
+                </td>
+                <td>
+                    {% if invoice.is_paid %}
+                    <span class="status-badge status-active">
+                        <i class="fas fa-check-circle"></i> Payée
+                    </span>
+                    {% else %}
+                    <span class="status-badge"
+                        style="background: rgba(251, 191, 36, 0.1); color: #fbbf24; border-color: rgba(251, 191, 36, 0.2);">
+                        <i class="fas fa-clock"></i> En attente
+                    </span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'invoice_detail' invoice.pk %}" class="btn btn-outline btn-icon"
+                        title="Voir détail">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="{% url 'invoice_edit' invoice.pk %}" class="btn btn-outline btn-icon" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <a href="{% url 'invoice_pdf' invoice.pk %}" class="btn btn-outline btn-icon"
+                        title="Télécharger PDF">
+                        <i class="fas fa-download"></i>
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" style="text-align:center; color: var(--text-secondary);">
+                    Aucune facture trouvée.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

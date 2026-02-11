@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapport des Entrées de Stock - NayxusStock</title>
+    <style>
+        :root {
+            --primary: #10b981;
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+            --border: #e5e7eb;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: var(--text-dark);
+            background: #fff;
+        }
+
+        @page {
+            size: A4 landscape;
+            margin: 1cm;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 20px;
+        }
+
+        .company-info h1 {
+            margin: 0;
+            color: var(--primary);
+            font-size: 24px;
+        }
+
+        .report-title {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .report-title h2 {
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .meta-info {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            text-align: right;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 10px;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+
+        th {
+            background-color: #f9fafb;
+            font-weight: 600;
+        }
+
+        .summary-section {
+            display: flex;
+            justify-content: flex-end;
+            gap: 40px;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f3f4f6;
+            border-radius: 8px;
+        }
+
+        .summary-item {
+            text-align: right;
+        }
+
+        .summary-label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-bottom: 5px;
+        }
+
+        .summary-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .summary-value.total {
+            color: var(--primary);
+        }
+
+        .no-print {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: #fff;
+            color: var(--text-dark);
+        }
+
+        .btn-print {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <button onclick="window.print()" class="btn btn-print">Imprimer le Rapport</button>
+        <button onclick="window.close()" class="btn">Fermer</button>
+    </div>
+
+    <div class="header">
+        <div style="display: flex; align-items: center; gap: 20px;">
+            {% if store.logo %}
+                <img src="{{ store.logo.url }}" alt="Logo" style="max-height: 80px; width: auto; border-radius: 4px;">
+            {% endif %}
+            <div class="company-info">
+                <h1>{{ store.name }}</h1>
+                <p>{{ store.address|default:"Gestion d'Inventaire & Suivi de Stock" }}</p>
+            </div>
+        </div>
+        <div class="meta-info">
+            <p><strong>Généré par:</strong> {{ user.username }}</p>
+            <p><strong>Date d'édition:</strong> {{ today|date:"d/m/Y H:i" }}</p>
+            {% if start_date or end_date %}
+            <p><strong>Période:</strong> 
+                {% if start_date %}du {{ start_date }}{% endif %}
+                {% if end_date %} au {{ end_date }}{% endif %}
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="report-title">
+        <h2>Rapport des Entrées de Marchandises</h2>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Produit</th>
+                <th>Catégorie</th>
+                <th>Prix Achat Unit.</th>
+                <th>Quantité Entrée</th>
+                <th style="text-align: right;">Valeur Totale Entry</th>
+                <th>Motif</th>
+                <th>Auteur</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for movement in movements %}
+            <tr>
+                <td>{{ movement.date|date:"d/m/Y H:i" }}</td>
+                <td style="font-weight: 600;">{{ movement.product.name }}</td>
+                <td>{{ movement.product.category.name }}</td>
+                <td>{{ movement.product.purchase_price|floatformat:0 }} FCFA</td>
+                <td style="font-weight: 600;">+ {{ movement.quantity }}</td>
+                <td style="text-align: right;">
+                    {% widthratio movement.quantity 1 movement.product.purchase_price as subtotal %}
+                    {{ subtotal }} FCFA
+                </td>
+                <td>{{ movement.reason|default:"—" }}</td>
+                <td>{{ movement.user.username }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" style="text-align: center;">Aucune entrée de stock enregistrée sur cette période.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="summary-section">
+        <div class="summary-item">
+            <span class="summary-label">Nombre de Mouvements</span>
+            <span class="summary-value">{{ movements.count }}</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Total Quantité Entrée</span>
+            <span class="summary-value total">{{ total_qty }}</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Valeur Totale des Entrées</span>
+            <span class="summary-value total">{{ total_value|floatformat:0 }} FCFA</span>
+        </div>
+    </div>
+
+    <div style="margin-top: 50px; font-size: 0.8rem; color: var(--text-light); text-align: center;">
+        <p>Document confidentiel - {{ store.name }}</p>
+    </div>
+</body>
+</html>

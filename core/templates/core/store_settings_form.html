@@ -1,0 +1,55 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Paramètres | NayxusStock{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="header-title">
+        <h1 class="page-title">Paramètres du Magasin</h1>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">Ces informations apparaîtront sur vos factures et rapports.</p>
+    </div>
+</div>
+
+<div style="max-width: 800px; margin: 0 auto;">
+    <form method="post" enctype="multipart/form-data" class="form-container" style="background: var(--bg-secondary); padding: 30px; border-radius: 12px; border: 1px solid var(--border-color);">
+        {% csrf_token %}
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div style="grid-column: span 2; margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Nom du Magasin</label>
+                <input type="text" name="name" value="{{ form.name.value|default:'' }}" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+            </div>
+
+            <div style="grid-column: span 2; margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Adresse Complète</label>
+                <textarea name="address" rows="3" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">{{ form.address.value|default:'' }}</textarea>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Téléphone</label>
+                <input type="text" name="phone" value="{{ form.phone.value|default:'' }}" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Email de contact</label>
+                <input type="email" name="email" value="{{ form.email.value|default:'' }}" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+            </div>
+
+            <div style="grid-column: span 2; margin-bottom: 30px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Logo (Image)</label>
+                {% if store.logo %}
+                <div style="margin-bottom: 10px;">
+                    <img src="{{ store.logo.url }}" alt="Logo actuel" style="max-height: 100px; border-radius: 8px; border: 1px solid var(--border-color);">
+                </div>
+                {% endif %}
+                <input type="file" name="logo" style="width: 100%; padding: 10px; color: var(--text-secondary);">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="submit" class="btn btn-primary" style="padding: 12px 24px;">Enregistrer les modifications</button>
+            <a href="{% url 'dashboard' %}" class="btn btn-outline" style="padding: 12px 24px;">Annuler</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

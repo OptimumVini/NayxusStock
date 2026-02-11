@@ -1,0 +1,172 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NayxusStock{% endblock %}</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=1.1">
+    <!-- Theme Switcher Script (Immediate execution to prevent flicker) -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="brand">
+            <i class="fas fa-cubes"></i>
+            <span>{{ store.name }}</span>
+        </div>
+
+        <ul class="nav-links" style="overflow-y: auto; flex: 1; margin-right: -10px; padding-right: 10px;">
+            <li class="nav-item">
+                <a href="{% url 'dashboard' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <i class="fas fa-home"></i>
+                    <span>Accueil</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'product_list' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'product_list' %}active{% endif %}">
+                    <i class="fas fa-box" {% if low_stock_alert_count > 0 %}style="color: #ef4444;"{% endif %}></i>
+                    <span>Produits</span>
+                    {% if low_stock_alert_count > 0 %}
+                    <span class="badge"
+                        style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.75rem; margin-left: auto;">{{
+                        low_stock_alert_count }}</span>
+                    {% endif %}
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'category_list' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'category_list' %}active{% endif %}">
+                    <i class="fas fa-layer-group"></i>
+                    <span>Catégories</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'stock_movement_list' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'stock_movement_list' %}active{% endif %}">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Mouvements Stock</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'sales_list' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'sales_list' %}active{% endif %}">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Ventes</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'invoice_list' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'invoice_list' %}active{% endif %}">
+                    <i class="fas fa-file-invoice"></i>
+                    <span>Factures</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'customer_list' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'customer_list' %}active{% endif %}">
+                    <i class="fas fa-users"></i>
+                    <span>Clients</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'statistics' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'statistics' %}active{% endif %}">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Statistiques</span>
+                </a>
+            </li>
+            {% if user.is_staff or user.is_superuser %}
+            <li class="nav-item">
+                <a href="{% url 'store_settings' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'store_settings' %}active{% endif %}">
+                    <i class="fas fa-tools"></i>
+                    <span>Paramètres</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'admin:index' %}" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    <span>Administration</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+
+        <!-- Theme Toggle -->
+        <div style="margin-top: 20px; padding: 0 16px;">
+            <button id="theme-toggle" class="nav-link" style="width: 100%; border: 1px solid var(--border-color); background: var(--bg-secondary); cursor: pointer; justify-content: center;">
+                <i class="fas fa-moon" id="theme-icon"></i>
+                <span id="theme-text">Mode Sombre</span>
+            </button>
+        </div>
+
+        <div class="user-profile">
+            <div class="avatar">{{ user.username|make_list|first|upper }}</div>
+            <div class="user-info-text">
+                <span class="user-name">{{ user.username }}</span>
+                <span class="user-role">{{ user.get_role_display|default:"User" }}</span>
+            </div>
+            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit"
+                    style="background:none; border:none; color: var(--text-secondary); cursor: pointer; padding: 0;"><i
+                        class="fas fa-sign-out-alt"></i></button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <script>
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const themeText = document.getElementById('theme-text');
+
+        function updateThemeUI(theme) {
+            console.log('Updating UI for theme:', theme);
+            if (theme === 'light') {
+                themeIcon.className = 'fas fa-sun';
+                themeText.innerText = 'Mode Clair';
+            } else {
+                themeIcon.className = 'fas fa-moon';
+                themeText.innerText = 'Mode Sombre';
+            }
+        }
+
+        // Initialize UI based on current state
+        const initialTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        updateThemeUI(initialTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            console.log('Switching to theme:', newTheme);
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeUI(newTheme);
+        });
+    </script>
+</body>
+
+</html>

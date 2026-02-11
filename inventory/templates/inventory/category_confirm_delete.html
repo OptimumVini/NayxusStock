@@ -1,0 +1,26 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Supprimer la Catégorie | NayxusStock{% endblock %}
+
+{% block content %}
+<div class="form-container" style="max-width: 600px; margin: 40px auto; padding: 30px; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
+    <h1 style="color: #ef4444; margin-bottom: 20px;"><i class="fas fa-exclamation-triangle"></i> Confirmer la suppression</h1>
+    <p style="font-size: 1.1rem; margin-bottom: 30px; color: var(--text-primary);">
+        Êtes-vous sûr de vouloir supprimer la catégorie <strong>"{{ object.name }}"</strong> ?
+        <br>
+        <span style="font-size: 0.9rem; color: #ef4444;">Cette action est irréversible et pourrait affecter les produits associés.</span>
+    </p>
+
+    <form method="post">
+        {% csrf_token %}
+        <div style="display: flex; gap: 15px; justify-content: center;">
+            <a href="{% url 'category_list' %}" class="btn btn-outline" style="padding: 10px 25px;">
+                Annuler
+            </a>
+            <button type="submit" class="btn" style="background: #ef4444; color: white; padding: 10px 25px; border: none; border-radius: 8px; cursor: pointer;">
+                Supprimer Définitivement
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

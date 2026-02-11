@@ -1,0 +1,62 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Catégories | NayxusStock{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="header-title">
+        <h1 class="page-title">Catégories</h1>
+    </div>
+    <div class="header-actions">
+        {% if perms.inventory.add_category %}
+        <a href="{% url 'category_add' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Ajouter une Catégorie
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Description</th>
+                <th>Nombre de Produits</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for category in categories %}
+            <tr class="data-row">
+                <td style="font-weight: 600;">{{ category.name }}</td>
+                <td>{{ category.description|default:"—" }}</td>
+                <td>{{ category.product_set.count }}</td>
+                <td>
+                    <a href="{% url 'category_detail' category.pk %}" class="btn btn-outline btn-icon"
+                        title="Voir détail">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    {% if perms.inventory.change_category %}
+                    <a href="{% url 'category_edit' category.pk %}" class="btn btn-outline btn-icon" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    {% endif %}
+                    {% if perms.inventory.delete_category %}
+                    <a href="{% url 'category_delete' category.pk %}" class="btn btn-outline btn-icon" title="Supprimer" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.2);">
+                        <i class="fas fa-trash"></i>
+                    </a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="text-align:center; color: var(--text-secondary);">
+                    Aucune catégorie trouvée. Ajoutez-en une pour commencer !
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

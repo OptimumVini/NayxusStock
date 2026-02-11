@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bilan des Ventes - NayxusStock</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+            --border: #e5e7eb;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: var(--text-dark);
+            background: #fff;
+        }
+
+        @page {
+            size: A4 landscape;
+            margin: 1cm;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 20px;
+        }
+
+        .company-info h1 {
+            margin: 0;
+            color: var(--primary);
+            font-size: 24px;
+        }
+
+        .report-title {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .report-title h2 {
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .meta-info {
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 10px;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+
+        th {
+            background-color: #f9fafb;
+            font-weight: 600;
+        }
+
+        .summary-section {
+            display: flex;
+            justify-content: flex-end;
+            gap: 40px;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f3f4f6;
+            border-radius: 8px;
+        }
+
+        .summary-item {
+            text-align: right;
+        }
+
+        .summary-label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-bottom: 5px;
+        }
+
+        .summary-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .summary-value.total {
+            color: var(--primary);
+        }
+
+        .summary-value.paid {
+            color: #059669;
+        }
+
+        .summary-value.remaining {
+            color: #dc2626;
+        }
+
+        .no-print {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: #fff;
+            color: var(--text-dark);
+        }
+
+        .btn-print {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <button onclick="window.print()" class="btn btn-print">Imprimer le Bilan</button>
+        <button onclick="window.close()" class="btn">Fermer</button>
+    </div>
+
+    <div class="header">
+        <div style="display: flex; align-items: center; gap: 20px;">
+            {% if store.logo %}
+                <img src="{{ store.logo.url }}" alt="Logo" style="max-height: 80px; width: auto; border-radius: 4px;">
+            {% endif %}
+            <div class="company-info">
+                <h1>{{ store.name }}</h1>
+                <p>{{ store.address|default:"Solutions de Gestion de Stock & Ventes" }}</p>
+                {% if store.phone or store.email %}
+                <p style="font-size: 0.8rem; color: var(--text-light); margin-top: 5px;">
+                    {% if store.phone %}Tél: {{ store.phone }} {% endif %}
+                    {% if store.email %}| Email: {{ store.email }}{% endif %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="meta-info">
+            <p><strong>Vendeur:</strong> {{ user.username }}</p>
+            <p><strong>Date d'édition:</strong> {{ today|date:"d/m/Y H:i" }}</p>
+            {% if start_date or end_date %}
+            <p><strong>Période:</strong> 
+                {% if start_date %}du {{ start_date }}{% endif %}
+                {% if end_date %} au {{ end_date }}{% endif %}
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="report-title">
+        <h2>Bilan Récapitulatif des Ventes</h2>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>N° Facture</th>
+                <th>Date</th>
+                <th>Client</th>
+                <th>Statut</th>
+                <th style="text-align: right;">Montant Total</th>
+                <th style="text-align: right;">Montant Payé</th>
+                <th style="text-align: right;">Reste à Payer</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for invoice in invoices %}
+            <tr>
+                <td>{{ invoice.number }}</td>
+                <td>{{ invoice.date|date:"d/m/Y H:i" }}</td>
+                <td>{{ invoice.customer.name }}</td>
+                <td>{{ invoice.get_status_display }}</td>
+                <td style="text-align: right;">{{ invoice.total_amount|floatformat:0 }} FCFA</td>
+                <td style="text-align: right;">{{ invoice.paid_amount|floatformat:0 }} FCFA</td>
+                <td style="text-align: right; {% if invoice.remaining_amount > 0 %}color: #dc2626; font-weight: 600;{% endif %}">
+                    {{ invoice.remaining_amount|floatformat:0 }} FCFA
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center;">Aucune vente enregistrée sur cette période.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="summary-section">
+        <div class="summary-item">
+            <span class="summary-label">Nombre de Ventes</span>
+            <span class="summary-value">{{ summary.count }}</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Chiffre d'Affaire Total</span>
+            <span class="summary-value total">{{ summary.total|floatformat:0 }} FCFA</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Total Encaissé</span>
+            <span class="summary-value paid">{{ summary.paid|floatformat:0 }} FCFA</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Total Reste à Recouvrer</span>
+            <span class="summary-value remaining">{{ summary.remaining|floatformat:0 }} FCFA</span>
+        </div>
+    </div>
+
+    <div style="margin-top: 50px; font-size: 0.8rem; color: var(--text-light); text-align: center; border-top: 1px solid var(--border); padding-top: 20px;">
+        <p>Document généré par {{ store.name }}. Tous droits réservés.</p>
+    </div>
+</body>
+</html>

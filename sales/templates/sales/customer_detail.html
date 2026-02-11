@@ -1,0 +1,96 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Détails Client : {{ customer.name }} | NayxusStock{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="header-title">
+        <h1 class="page-title">Détails du Client</h1>
+    </div>
+    <div class="header-actions">
+        <a href="{% url 'customer_edit' customer.pk %}" class="btn btn-primary">
+            <i class="fas fa-edit"></i> Modifier
+        </a>
+        <a href="{% url 'customer_list' %}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Retour à la liste
+        </a>
+    </div>
+</div>
+
+<div class="detail-container"
+    style="background-color: var(--bg-secondary); padding: 30px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 40px;">
+    <h2 style="font-size: 2rem; margin-bottom: 20px; color: var(--text-primary);">{{ customer.name }}</h2>
+
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px;">
+        <div class="info-group">
+            <label
+                style="display: block; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 5px;">Email</label>
+            <div style="font-weight: 600; font-size: 1.1rem;">{{ customer.email|default:"—" }}</div>
+        </div>
+
+        <div class="info-group">
+            <label
+                style="display: block; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 5px;">Téléphone</label>
+            <div style="font-weight: 600; font-size: 1.1rem;">{{ customer.phone|default:"—" }}</div>
+        </div>
+
+        <div class="info-group" style="grid-column: span 2;">
+            <label
+                style="display: block; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 5px;">Adresse</label>
+            <div style="line-height: 1.6;">{{ customer.address|linebreaks|default:"—" }}</div>
+        </div>
+
+        <div class="info-group">
+            <label style="display: block; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 5px;">Inscrit
+                depuis le</label>
+            <div style="font-weight: 600; font-size: 1.1rem;">{{ customer.created_at|date:"d/m/Y" }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="invoices-section">
+    <h3 style="margin-bottom: 20px;">Dernières Factures ({{ customer.invoice_set.count }})</h3>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>N° Facture</th>
+                    <th>Date</th>
+                    <th>Montant Total</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invoice in customer.invoice_set.all|dictsortreversed:"date" %}
+                <tr class="data-row">
+                    <td>{{ invoice.number }}</td>
+                    <td>{{ invoice.date|date:"d/m/Y" }}</td>
+                    <td>{{ invoice.total_amount }} FCFA</td>
+                    <td>
+                        {% if invoice.is_paid %}
+                        <span class="status-badge status-active">Payée</span>
+                        {% else %}
+                        <span class="status-badge"
+                            style="background: rgba(251, 191, 36, 0.1); color: #fbbf24; border-color: rgba(251, 191, 36, 0.2);">En
+                            attente</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'invoice_detail' invoice.pk %}" class="btn btn-outline btn-icon"
+                            title="Voir détail">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: var(--text-secondary);">Aucune facture pour ce
+                        client.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

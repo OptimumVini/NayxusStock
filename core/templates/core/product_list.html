@@ -1,0 +1,324 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Inventaire | NayxusStock{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="header-title">
+        <h1 class="page-title">Produits</h1>
+    </div>
+    <div class="header-actions">
+        <!-- Search Bar -->
+        <form method="get" action="{% url 'product_list' %}" class="search-bar">
+            <i class="fas fa-search"></i>
+            <input type="text" name="search" placeholder="Rechercher..." value="{{ search_query }}">
+        </form>
+
+        <a href="{% url 'export_products_csv' %}" class="btn btn-outline">
+            <i class="fas fa-file-csv"></i> Exporter CSV
+        </a>
+        <a href="{% if perms.inventory.add_product %}{% url 'inventory_report' %}{% else %}javascript:void(0){% endif %}" 
+           target="{% if perms.inventory.add_product %}_blank{% endif %}" 
+           class="btn btn-outline" 
+           style="border-color: #3b82f6; color: #3b82f6; {% if not perms.inventory.add_product %}opacity: 0.5; cursor: not-allowed; border-color: #9ca3af; color: #9ca3af; pointer-events: none;{% endif %}"
+           {% if not perms.inventory.add_product %}title="Accès réservé aux administrateurs"{% endif %}>
+            <i class="fas fa-clipboard-list"></i> Inventaire
+        </a>
+        {% if perms.inventory.add_product %}
+        <a href="{% url 'product_add' %}" class="btn btn-primary" style="padding: 5px 12px; font-size: 0.75rem;">
+            <i class="fas fa-plus"></i> Ajouter un Produit
+        </a>
+        {% endif %}
+
+        <!-- Filter Dropdown -->
+        <div class="dropdown">
+            <button class="btn btn-outline btn-icon" title="Filtrer" onclick="toggleDropdown('filterDropdown')">
+                <i class="fas fa-filter"></i>
+            </button>
+            <div id="filterDropdown" class="dropdown-content">
+                <a href="{% url 'product_list' %}?view={{ view_mode }}">Tous</a>
+                <a href="{% url 'product_list' %}?status=active&view={{ view_mode }}">Actifs</a>
+                <a href="{% url 'product_list' %}?status=low_stock&view={{ view_mode }}">Stock Faible</a>
+                {% for category in categories %}
+                <a href="{% url 'product_list' %}?category={{ category.id }}&view={{ view_mode }}">{{ category.name }}</a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- View Mode Toggles -->
+        <a href="{% url 'product_list' %}?view=list{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}"
+            class="btn btn-outline btn-icon {% if view_mode == 'list' %}active{% endif %}" title="Vue Liste">
+            <i class="fas fa-list"></i>
+        </a>
+
+        <a href="{% url 'product_list' %}?view=grid{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}"
+            class="btn btn-outline btn-icon {% if view_mode == 'grid' %}active{% endif %}" title="Vue Grille">
+            <i class="fas fa-th-large"></i>
+        </a>
+    </div>
+</div>
+
+{% if view_mode == 'grid' %}
+<!-- Grid View -->
+<div class="grid-container">
+    {% for product in products %}
+    <div class="product-card">
+        <div class="product-card-image">
+            {% if product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}">
+            {% else %}
+            <div class="product-placeholder"><i class="fas fa-box"></i></div>
+            {% endif %}
+        </div>
+        <div class="product-card-content">
+            <h3 class="product-card-title">{{ product.name }}</h3>
+            <p class="product-card-category">{{ product.category.name }}</p>
+            <div class="product-card-info">
+                <span class="product-card-stock">Stock: {{ product.quantity }}</span>
+                <span class="product-card-price">{{ product.selling_price }} FCFA</span>
+            </div>
+            <div class="product-card-status"
+                style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    {% if product.is_low_stock %}
+                    <span class="status-badge status-disabled"
+                        style="color:#ef4444; border-color: rgba(239,68,68,0.2); background: rgba(239,68,68,0.1);">•
+                        Stock
+                        Faible</span>
+                    {% else %}
+                    <span class="status-badge status-active">• Actif</span>
+                    {% endif %}
+                </div>
+                <div class="card-actions" style="display: flex; gap: 5px;">
+                    <a href="{% url 'product_detail' product.pk %}" class="btn btn-outline btn-icon" title="Voir détail"
+                        style="padding: 5px 8px; font-size: 0.8rem;">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="{% url 'product_edit' product.pk %}" class="btn btn-outline btn-icon" title="Modifier"
+                        style="padding: 5px 8px; font-size: 0.8rem;">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <p style="text-align:center; color: var(--text-secondary); grid-column: 1/-1;">Aucun produit trouvé. Ajoutez-en un
+        pour commencer !</p>
+    {% endfor %}
+</div>
+{% else %}
+<!-- List View (Table) -->
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th width="40"></th> <!-- Checkbox column if needed -->
+                <th>Articles</th>
+                <th>Catégorie</th>
+                <th>Statut</th>
+                <th>Stock</th>
+                <th>Prix</th>
+                <th></th> <!-- Three dots menu -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            <tr class="data-row">
+                <td><input type="checkbox"></td>
+                <td class="product-cell">
+                    {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-img">
+                    {% else %}
+                    <div class="product-img" style="display:flex;justify-content:center;align-items:center;color:#aaa;">
+                        <i class="fas fa-box"></i>
+                    </div>
+                    {% endif %}
+                    <span style="font-weight: 600;">{{ product.name }}</span>
+                </td>
+                <td>{{ product.category.name }}</td>
+                <td>
+                    {% if product.is_low_stock %}
+                    <span class="status-badge status-disabled"
+                        style="color:#ef4444; border-color: rgba(239,68,68,0.2); background: rgba(239,68,68,0.1);">•
+                        Stock Faible</span>
+                    {% else %}
+                    <span class="status-badge status-active">• Actif</span>
+                    {% endif %}
+                </td>
+                <td>{{ product.quantity }}</td>
+                <td>{{ product.selling_price }} FCFA</td>
+                <td style="display: flex; gap: 5px;">
+                    <a href="{% url 'product_detail' product.pk %}" class="btn btn-outline btn-icon"
+                        title="Voir détail">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    {% if perms.inventory.change_product %}
+                    <a href="{% url 'product_edit' product.pk %}" class="btn btn-outline btn-icon" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align:center; color: var(--text-secondary);">Aucun produit trouvé.
+                    Ajoutez-en un pour commencer !</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<style>
+    /* Inline styles for quick tweaks or specific page needs */
+    .header-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    input[type="checkbox"] {
+        accent-color: var(--accent);
+        cursor: pointer;
+    }
+
+    /* Dropdown Styles */
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: var(--bg-secondary);
+        min-width: 200px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        z-index: 1000;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        margin-top: 5px;
+    }
+
+    .dropdown-content a {
+        color: var(--text-primary);
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+        transition: background 0.2s;
+    }
+
+    .dropdown-content a:hover {
+        background-color: var(--bg-primary);
+    }
+
+    .dropdown-content.show {
+        display: block;
+    }
+
+    /* Grid View Styles */
+    .grid-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+        padding: 10px 0;
+    }
+
+    .product-card {
+        background-color: var(--bg-secondary);
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        border: 1px solid var(--border-color);
+    }
+
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .product-card-image {
+        width: 100%;
+        height: 200px;
+        background-color: var(--bg-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .product-card-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .product-placeholder {
+        font-size: 3rem;
+        color: var(--text-secondary);
+    }
+
+    .product-card-content {
+        padding: 20px;
+    }
+
+    .product-card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: var(--text-primary);
+    }
+
+    .product-card-category {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        margin-bottom: 15px;
+    }
+
+    .product-card-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        font-size: 0.95rem;
+    }
+
+    .product-card-stock {
+        color: var(--text-secondary);
+    }
+
+    .product-card-price {
+        color: var(--accent);
+        font-weight: 600;
+    }
+
+    .product-card-status {
+        margin-top: 10px;
+    }
+
+    /* Active button state */
+    .btn.active {
+        background-color: var(--accent);
+        color: white;
+    }
+</style>
+
+<script>
+    function toggleDropdown(id) {
+        document.getElementById(id).classList.toggle("show");
+    }
+
+    // Close dropdown when clicking outside
+    window.onclick = function (event) {
+        if (!event.target.matches('.btn-icon')) {
+            var dropdowns = document.getElementsByClassName("dropdown-content");
+            for (var i = 0; i < dropdowns.length; i++) {
+                var openDropdown = dropdowns[i];
+                if (openDropdown.classList.contains('show')) {
+                    openDropdown.classList.remove('show');
+                }
+            }
+        }
+    }
+</script>
+{% endblock %}

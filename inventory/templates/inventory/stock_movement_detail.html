@@ -1,0 +1,71 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Détails Mouvement : {{ movement.id }} | NayxusStock{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="header-title">
+        <h1 class="page-title">Détails du Mouvement</h1>
+    </div>
+    <div class="header-actions">
+        <a href="{% url 'stock_movement_list' %}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Retour à la liste
+        </a>
+    </div>
+</div>
+
+<div class="detail-container"
+    style="background-color: var(--bg-secondary); padding: 30px; border-radius: 12px; border: 1px solid var(--border-color);">
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px;">
+        <div class="info-group">
+            <label
+                style="display: block; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 5px;">Produit</label>
+            <div style="font-weight: 600; font-size: 1.1rem;">
+                <a href="{% url 'product_detail' movement.product.pk %}"
+                    style="color: var(--accent); text-decoration: none;">{{ movement.product.name }}</a>
+            </div>
+        </div>
+
+        <div class="info-group">
+            <label
+                style="display: block; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 5px;">Date</label>
+            <div style="font-weight: 600; font-size: 1.1rem;">{{ movement.date|date:"d/m/Y H:i:s" }}</div>
+        </div>
+
+        <div class="info-group">
+            <label style="display: block; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 5px;">Type de
+                Mouvement</label>
+            <div>
+                {% if movement.movement_type == 'ENTRY' %}
+                <span class="status-badge"
+                    style="background: rgba(16, 185, 129, 0.1); color: #10b981; border-color: rgba(16, 185, 129, 0.2);">Entrée</span>
+                {% elif movement.movement_type == 'EXIT' %}
+                <span class="status-badge"
+                    style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2);">Sortie</span>
+                {% else %}
+                <span class="status-badge"
+                    style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border-color: rgba(59, 130, 246, 0.2);">Ajustement</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="info-group">
+            <label
+                style="display: block; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 5px;">Quantité</label>
+            <div style="font-weight: 600; font-size: 1.1rem;">{{ movement.quantity }}</div>
+        </div>
+
+        <div class="info-group">
+            <label style="display: block; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 5px;">Effectué
+                par</label>
+            <div style="font-weight: 600; font-size: 1.1rem;">{{ movement.user.username|default:"Système" }}</div>
+        </div>
+
+        <div class="info-group">
+            <label style="display: block; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 5px;">Motif /
+                Référence</label>
+            <div style="font-weight: 600; font-size: 1.1rem;">{{ movement.reason|default:"—" }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Mouvements de Stock | NayxusStock{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="header-title">
+        <h1 class="page-title">Mouvements de Stock</h1>
+    </div>
+    <div class="header-actions">
+        <a href="{% url 'stock_movement_add' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nouveau Mouvement
+        </a>
+    </div>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Produit</th>
+                <th>Type</th>
+                <th>Quantité</th>
+                <th>Utilisateur</th>
+                <th>Motif</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for movement in movements %}
+            <tr class="data-row">
+                <td>{{ movement.date|date:"d/m/Y H:i" }}</td>
+                <td style="font-weight: 600;">{{ movement.product.name }}</td>
+                <td>
+                    {% if movement.movement_type == 'ENTRY' %}
+                    <span class="status-badge"
+                        style="background: rgba(16, 185, 129, 0.1); color: #10b981; border-color: rgba(16, 185, 129, 0.2);">
+                        <i class="fas fa-arrow-down"></i> Entrée
+                    </span>
+                    {% elif movement.movement_type == 'EXIT' %}
+                    <span class="status-badge"
+                        style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2);">
+                        <i class="fas fa-arrow-up"></i> Sortie
+                    </span>
+                    {% else %}
+                    <span class="status-badge"
+                        style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border-color: rgba(59, 130, 246, 0.2);">
+                        <i class="fas fa-sync"></i> Ajustement
+                    </span>
+                    {% endif %}
+                </td>
+                <td>{{ movement.quantity }}</td>
+                <td>{{ movement.user.username }}</td>
+                <td>{{ movement.reason|default:"—" }}</td>
+                <td>
+                    <a href="{% url 'stock_movement_detail' movement.pk %}" class="btn btn-outline btn-icon"
+                        title="Voir détail">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align:center; color: var(--text-secondary);">
+                    Aucun mouvement de stock enregistré.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

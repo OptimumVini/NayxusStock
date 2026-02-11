@@ -1,0 +1,74 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Ventes | NayxusStock{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="header-title">
+        <h1 class="page-title">Ventes</h1>
+    </div>
+    <div class="header-actions">
+        <a href="{% url 'invoice_add' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nouvelle vente
+        </a>
+    </div>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>N° Facture</th>
+                <th>Date</th>
+                <th>Client</th>
+                <th>Montant Total</th>
+                <th>Payé</th>
+                <th>Statut</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for invoice in invoices %}
+            <tr class="data-row">
+                <td style="font-weight: 600;">{{ invoice.number }}</td>
+                <td>{{ invoice.date|date:"d/m/Y" }}</td>
+                <td>{{ invoice.customer.name }}</td>
+                <td>{{ invoice.total_amount }} FCFA</td>
+                <td>{{ invoice.paid_amount }} FCFA</td>
+                <td>
+                    {% if invoice.is_paid %}
+                    <span class="status-badge status-active">
+                        <i class="fas fa-check-circle"></i> Payé
+                    </span>
+                    {% else %}
+                    <span class="status-badge"
+                        style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2);">
+                        <i class="fas fa-exclamation-circle"></i> Impayé
+                    </span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'invoice_detail' invoice.pk %}" class="btn btn-outline btn-icon"
+                        title="Voir détail">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="{% url 'invoice_edit' invoice.pk %}" class="btn btn-outline btn-icon" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <a href="{% url 'invoice_pdf' invoice.pk %}" class="btn btn-outline btn-icon"
+                        title="Télécharger PDF">
+                        <i class="fas fa-download"></i>
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align:center; color: var(--text-secondary);">
+                    Aucune vente enregistrée. Créez-en une pour commencer !
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

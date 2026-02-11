@@ -1,0 +1,202 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ title }} | NayxusStock{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="header-title">
+        <h1 class="page-title">{{ title }}</h1>
+    </div>
+</div>
+
+<form method="post" id="invoice-form">
+    {% csrf_token %}
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+        <div
+            style="background-color: var(--bg-secondary); padding: 25px; border-radius: 12px; border: 1px solid var(--border-color);">
+            <h3 style="margin-bottom: 20px; font-size: 1.1rem; color: var(--text-secondary);">Informations Générales
+            </h3>
+            <div style="margin-bottom: 15px;">
+                <label for="{{ form.customer.id_for_label }}" style="display: block; margin-bottom: 8px;">Client</label>
+                {{ form.customer }}
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label for="{{ form.status.id_for_label }}" style="display: block; margin-bottom: 8px;">Statut</label>
+                {{ form.status }}
+            </div>
+        </div>
+
+        <div
+            style="background-color: var(--bg-secondary); padding: 25px; border-radius: 12px; border: 1px solid var(--border-color);">
+            <h3 style="margin-bottom: 20px; font-size: 1.1rem; color: var(--text-secondary);">Résumé Paiement</h3>
+            <div style="margin-bottom: 15px;">
+                <label for="{{ form.total_amount.id_for_label }}" style="display: block; margin-bottom: 8px;">Montant
+                    Total (Calculé)</label>
+                {{ form.total_amount }}
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label for="{{ form.paid_amount.id_for_label }}" style="display: block; margin-bottom: 8px;">Montant
+                    Payé</label>
+                {{ form.paid_amount }}
+            </div>
+        </div>
+    </div>
+
+    <div
+        style="background-color: var(--bg-secondary); padding: 25px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 30px;">
+        <h3 style="margin-bottom: 20px; font-size: 1.1rem; color: var(--text-secondary);">Articles de la vente</h3>
+
+        {{ items.management_form }}
+        <div id="items-container">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--border-color); text-align: left;">
+                        <th style="padding: 10px;">Produit</th>
+                        <th style="padding: 10px; width: 100px;">Quantité</th>
+                        <th style="padding: 10px; width: 150px;">Prix Unitaire</th>
+                        <th style="padding: 10px; width: 150px;">Sous-total</th>
+                        <th style="padding: 10px; width: 50px;">🗑️</th>
+                    </tr>
+                </thead>
+                <tbody id="items-body">
+                    {% for item_form in items %}
+                    <tr class="item-row" style="border-bottom: 1px solid var(--border-color);">
+                        {{ item_form.id }}
+                        <td style="padding: 10px;">{{ item_form.product }}</td>
+                        <td style="padding: 10px;">{{ item_form.quantity }}</td>
+                        <td style="padding: 10px;">{{ item_form.unit_price }}</td>
+                        <td style="padding: 10px;">{{ item_form.subtotal }}</td>
+                        <td style="padding: 10px; text-align: center;">
+                            {% if items.can_delete %}
+                            {{ item_form.DELETE }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div style="margin-top: 15px;">
+                <button type="button" class="btn btn-outline" id="add-item-btn"
+                    style="padding: 8px 15px; font-size: 0.9rem;">
+                    <i class="fas fa-plus"></i> Ajouter un article
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 10px;">
+        <button type="submit" class="btn btn-primary">Enregistrer la vente</button>
+        <a href="{% url 'invoice_list' %}" class="btn btn-outline">Annuler</a>
+    </div>
+</form>
+
+<style>
+    select,
+    input[type="number"],
+    input[type="text"] {
+        width: 100%;
+        padding: 10px;
+        background-color: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        color: var(--text-primary);
+        font-family: inherit;
+    }
+
+    input[readonly] {
+        background-color: rgba(255, 255, 255, 0.05);
+        cursor: not-allowed;
+    }
+
+    .item-row td {
+        vertical-align: middle;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const itemsBody = document.getElementById('items-body');
+        const addItemBtn = document.getElementById('add-item-btn');
+        const totalFormsInput = document.querySelector('input[name="items-TOTAL_FORMS"]');
+        const totalAmountInput = document.getElementById('{{ form.total_amount.id_for_label }}');
+
+        function updateTotals() {
+            let grandTotal = 0;
+            const rows = document.querySelectorAll('.item-row');
+            rows.forEach(row => {
+                const quantityInput = row.querySelector('input[name*="quantity"]');
+                const priceInput = row.querySelector('input[name*="unit_price"]');
+                const subtotalInput = row.querySelector('input[name*="subtotal"]');
+                const deleteCheckbox = row.querySelector('input[name*="DELETE"]');
+
+                if (deleteCheckbox && deleteCheckbox.checked) return;
+
+                const qty = parseFloat(quantityInput.value) || 0;
+                const price = parseFloat(priceInput.value) || 0;
+                const subtotal = qty * price;
+
+                if (subtotalInput) subtotalInput.value = subtotal.toFixed(2);
+                grandTotal += subtotal;
+            });
+            totalAmountInput.value = grandTotal.toFixed(2);
+        }
+
+        addItemBtn.addEventListener('click', function () {
+            const rowCount = parseInt(totalFormsInput.value);
+            const firstRow = document.querySelector('.item-row');
+            const newRow = firstRow.cloneNode(true);
+
+            // Update names and IDs
+            newRow.innerHTML = newRow.innerHTML.replace(/items-0-/g, `items-${rowCount}-`);
+
+            // Clear inputs
+            const inputs = newRow.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                if (input.type !== 'hidden') {
+                    input.value = '';
+                    if (input.name.includes('quantity')) input.value = '1';
+                    if (input.name.includes('unit_price')) input.value = '0';
+                    if (input.name.includes('subtotal')) input.value = '0';
+                }
+                if (input.type === 'checkbox') input.checked = false;
+            });
+
+            // Remove ID hidden input if cloned
+            const hiddenId = newRow.querySelector('input[type="hidden"][name*="-id"]');
+            if (hiddenId) hiddenId.remove();
+
+            itemsBody.appendChild(newRow);
+            totalFormsInput.value = rowCount + 1;
+        });
+
+        itemsBody.addEventListener('change', function (e) {
+            const target = e.target;
+
+            if (target.name.includes('product')) {
+                const productId = target.value;
+                if (productId) {
+                    fetch(`/inventory/api/products/${productId}/`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const row = target.closest('.item-row');
+                            const priceInput = row.querySelector('input[name*="unit_price"]');
+                            priceInput.value = data.selling_price;
+                            updateTotals();
+                        });
+                }
+            }
+
+            if (target.name.includes('quantity') || target.name.includes('unit_price') || target.name.includes('DELETE')) {
+                updateTotals();
+            }
+        });
+
+        // Event delegation for input events (real-time calculation)
+        itemsBody.addEventListener('input', function (e) {
+            if (e.target.name.includes('quantity') || e.target.name.includes('unit_price')) {
+                updateTotals();
+            }
+        });
+    });
+</script>
+{% endblock %}

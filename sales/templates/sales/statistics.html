@@ -1,0 +1,254 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Statistiques | NayxusStock{% endblock %}
+
+{% block content %}
+<div class="no-print" style="margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+    <button onclick="window.print()" class="btn btn-primary">
+        <i class="fas fa-print"></i> Imprimer le Bilan
+    </button>
+</div>
+
+<div class="print-container">
+<div class="page-header">
+    <div class="header-title" style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 20px;">
+            {% if store.logo %}
+                <img src="{{ store.logo.url }}" alt="Logo" style="max-height: 70px; width: auto; border-radius: 8px;">
+            {% endif %}
+            <div>
+                <h1 class="page-title">{{ store.name|default:"Analyses & Statistiques" }}</h1>
+                <p style="color: var(--text-secondary); margin-top: 5px;">
+                    <i class="fas fa-map-marker-alt" style="font-size: 0.8rem;"></i> {{ store.address|default:"Statistiques de performance globale" }}
+                </p>
+                {% if store.phone or store.email %}
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 5px;">
+                    {% if store.phone %}<span style="margin-right: 15px;"><i class="fas fa-phone"></i> {{ store.phone }}</span>{% endif %}
+                    {% if store.email %}<span><i class="fas fa-envelope"></i> {{ store.email }}</span>{% endif %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        <div style="text-align: right;">
+            <p style="font-size: 0.9rem; color: var(--text-secondary);">Période : <strong>Globale</strong></p>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">Généré le : {% now "d/m/Y H:i" %}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1);">
+            <i class="fas fa-box" style="color: #3b82f6;"></i>
+        </div>
+        <div class="stat-content">
+            <h3 class="stat-value">{{ total_products }}</h3>
+            <p class="stat-label">Produits</p>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1);">
+            <i class="fas fa-users" style="color: #10b981;"></i>
+        </div>
+        <div class="stat-content">
+            <h3 class="stat-value">{{ total_customers }}</h3>
+            <p class="stat-label">Clients</p>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(251, 191, 36, 0.1);">
+            <i class="fas fa-file-invoice" style="color: #fbbf24;"></i>
+        </div>
+        <div class="stat-content">
+            <h3 class="stat-value">{{ total_invoices }}</h3>
+            <p class="stat-label">Factures émises</p>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(139, 92, 246, 0.1);">
+            <i class="fas fa-money-bill-wave" style="color: #8b5cf6;"></i>
+        </div>
+        <div class="stat-content">
+            <h3 class="stat-value">{{ total_revenue|floatformat:0 }} FCFA</h3>
+            <p class="stat-label">Chiffre d'Affaires</p>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-top: 30px;">
+    <!-- Sales Chart -->
+    <div
+        style="background: var(--bg-secondary); padding: 30px; border-radius: 12px; border: 1px solid var(--border-color);">
+        <h2 style="color: var(--text-primary); margin-bottom: 25px; font-size: 1.1rem; font-weight: 600;">
+            <i class="fas fa-chart-line" style="margin-right: 10px; color: var(--accent);"></i> Évolution des Ventes
+        </h2>
+        <div style="height: 300px;">
+            <canvas id="salesChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Info Card or another chart -->
+    <div
+        style="background: var(--bg-secondary); padding: 30px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+        <div
+            style="width: 80px; height: 80px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--accent); margin-bottom: 20px;">
+            <i class="fas fa-trophy"></i>
+        </div>
+        <h3 style="font-size: 1.2rem; margin-bottom: 10px;">Performance</h3>
+        <p style="color: var(--text-secondary); line-height: 1.6;">Votre chiffre d'affaires total à ce jour est de
+            <strong>{{ total_revenue|floatformat:0 }} FCFA</strong>. Continuez ainsi !</p>
+    </div>
+</div>
+</div> <!-- End print-container -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ months_json| safe }},
+        datasets: [{
+            label: 'Ventes (FCFA)',
+            data: {{ totals_json| safe }},
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#3b82f6',
+        pointRadius: 5
+            }]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                ticks: { color: '#94a3b8' }
+            },
+            x: {
+                grid: { display: false },
+                ticks: { color: '#94a3b8' }
+            }
+        }
+    }
+    });
+</script>
+
+<style>
+    @media print {
+        .no-print, .sidebar, .brand, .user-profile, #theme-toggle, .avatar, form[action*="logout"] {
+            display: none !important;
+        }
+        
+        .main-content {
+            margin-left: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+        
+        body {
+            background: white !important;
+            color: black !important;
+        }
+        
+        .print-container {
+            background: white !important;
+            padding: 0 !important;
+        }
+
+        .page-header, .stat-card {
+            background: white !important;
+            border: 1px solid #ddd !important;
+            color: black !important;
+            box-shadow: none !important;
+            -webkit-print-color-adjust: exact;
+        }
+        
+        .stat-value, .page-title, h1, h2, h3 {
+            color: black !important;
+        }
+
+        .stat-label, p, span {
+            color: #333 !important;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 15px !important;
+        }
+
+        canvas {
+            max-width: 100% !important;
+            height: auto !important;
+        }
+
+        .stat-icon {
+            border: 1px solid #eee !important;
+            background: #f9f9f9 !important;
+        }
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 25px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-value {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin: 5px 0 0 0;
+    }
+</style>
+{% endblock %}
